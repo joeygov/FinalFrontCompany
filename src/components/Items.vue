@@ -9,11 +9,9 @@
           <v-spacer></v-spacer>
           <v-dialog v-model="dialog" max-width="500px">
             <template v-slot:activator="{ on }">
-              <v-btn color="primary" dark class="mb-2" v-on="on"
-                >New Item</v-btn
-              >
+              <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
             </template>
-            <v-card>
+            <v-card @submit.prevent="onSubmit" enctype="multipart/form-data">
               <v-card-title>
                 <span class="headline">{{ formTitle }}</span>
               </v-card-title>
@@ -24,49 +22,31 @@
                     src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3TKS6OkngaenOk2gXHAuEziDGtxAJ2IhS0njI6G6_uOWbhSEe&s"
                     height="200px"
                   ></v-img>
-                  <center v-model="editedItem.image">
-                    <input
-                      type="file"
-                      name="file"
-                      ref="myFileRef"
-                      multiple
-                      accept="/*image"
-                      @change="beforeUpload"
-                    />
-                    <v-button type="button" v-on:click="uploadFile()"
-                      >Upload</v-button
-                    >
-                  </center>
+                  <form @submit.prevent="onSubmit" enctype="multipart/form-data">
+                    <div class="fields">
+                      <label>Upload File</label>
+                      <br />
+                      <input type="file" ref="file" @change="onSelect" />
+                    </div>
+                    <div class="fields">
+                      <button>Submit</button>
+                    </div>
+                  </form>
                   <v-row>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="editedItem.name"
-                        label="Kind of Vehicle"
-                      ></v-text-field>
+                      <v-text-field v-model="editedItem.name" label="Kind of Vehicle"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="editedItem.brand"
-                        label="Brand"
-                      ></v-text-field>
+                      <v-text-field v-model="editedItem.brand" label="Brand"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="editedItem.sit"
-                        label="Sitting Capacity"
-                      ></v-text-field>
+                      <v-text-field v-model="editedItem.sit" label="Sitting Capacity"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="editedItem.loc"
-                        label="Location"
-                      ></v-text-field>
+                      <v-text-field v-model="editedItem.loc" label="Location"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="editedItem.rate"
-                        label="Rate"
-                      ></v-text-field>
+                      <v-text-field v-model="editedItem.rate" label="Rate"></v-text-field>
                     </v-col>
                   </v-row>
                 </v-container>
@@ -82,18 +62,15 @@
         </v-toolbar>
       </template>
       <template v-slot:item.action="{ item }">
-        <v-icon small class="mr-2" @click="editItem(item)">
-          edit
-        </v-icon>
-        <v-icon small @click="deleteItem(item)">
-          delete
-        </v-icon>
+        <v-icon small class="mr-2" @click="editItem(item)">edit</v-icon>
+        <v-icon small @click="deleteItem(item)">delete</v-icon>
       </template>
     </v-data-table>
   </div>
 </template>
 <script>
 import Header from "..//components/Header.vue";
+import axios from "axios";
 export default {
   components: {
     Header
@@ -151,26 +128,29 @@ export default {
   },
 
   methods: {
-    beforeUpload() {
-      this.file = this.$refs.myFileRef.files;
-    },
-    uploadFile: function() {
-      let formData = new FormData();
-
-      formData.append("img", this.file);
-      for (let i = 0; i < this.file.length; i++) {
-        formData.append("img", this.file[i]);
+    onSelect() {
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      const file = this.$refs.file.files[0];
+      this.file = file;
+      if (!allowedTypes.includes(file.type)) {
+        this.message = "Filetype is wrong!!";
       }
-      this.$axios
-        .post(`http://localhost:5000/uploadMultiple`, formData)
-        .then(res => {
-          console.log(res);
-          alert(res);
-        })
-        .catch(error => {
-          console.error("file upload failed", error);
-        });
+      if (file.size > 500000) {
+        this.message = "Too large, max size allowed is 500kb";
+      }
     },
+    async onSubmit() {
+      const formData = new FormData();
+      formData.append("file", this.file);
+      try {
+        await axios.post("http://localhost:5000/upload", formData);
+        this.message = "Uploaded!!";
+      } catch (err) {
+        console.log(err);
+        this.message = err.response.data.error;
+      }
+    },
+
     dashboard() {
       this.$router.push("/");
     },
@@ -226,4 +206,28 @@ export default {
     }
   }
 };
+
+//   beforeUpload() {
+//     this.file = this.$refs.myFileRef.files;
+//   },
+//   uploadFile: function() {
+//     let formData = new FormData();
+//     formData.append("file", this.file);
+//      for (let i = 0; i < this.file.length; i++) {
+//     formData.append("file", this.file[i]);
+//     this.$axios
+//       .post(`http://localhost:5000/upload`, formData)
+//       .then(res => {
+//         console.log(res);
+//         alert(res);
+//       })
+//       .catch(error => {
+//         console.error("file upload failed", error);
+//       });
+//      }
+//  },
 </script>
+
+
+
+
