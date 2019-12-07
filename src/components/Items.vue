@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Header />
+    <Header/>
     <v-data-table :headers="headers" :items="vehicle" class="elevation-1">
       <template v-slot:top>
         <v-toolbar flat color="white">
@@ -22,14 +22,14 @@
                     src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3TKS6OkngaenOk2gXHAuEziDGtxAJ2IhS0njI6G6_uOWbhSEe&s"
                     height="200px"
                   ></v-img>
-                  <form @submit.prevent="onSubmit" enctype="multipart/form-data">
+                  <form enctype="multipart/form-data">
                     <div class="fields">
                       <label>Upload File</label>
-                      <br />
-                      <input type="file" ref="file" @change="onSelect" />
+                      <br>
+                      <input type="file" ref="file" @change="onSelect">
                     </div>
                     <div class="fields">
-                      <button>Submit</button>
+                      <button @submit.prevent="onSubmit">Submit</button>
                     </div>
                   </form>
                   <v-row>
@@ -40,10 +40,10 @@
                       <v-text-field v-model="editedItem.brand" label="Brand"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field v-model="editedItem.sit" label="Sitting Capacity"></v-text-field>
+                      <v-text-field v-model="editedItem.sitincapacity" label="Sitting Capacity"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field v-model="editedItem.loc" label="Location"></v-text-field>
+                      <v-text-field v-model="editedItem.location" label="Location"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" md="4">
                       <v-text-field v-model="editedItem.rate" label="Rate"></v-text-field>
@@ -75,41 +75,43 @@ export default {
   components: {
     Header
   },
-  data: () => ({
-    dialog: false,
-    headers: [
-      {
-        text: "Image",
-        align: "left",
-        sortable: false,
-        value: "img"
+  data() {
+    return {
+      dialog: false,
+      headers: [
+        {
+          text: "Image",
+          align: "left",
+          sortable: false,
+          value: "img"
+        },
+        { text: "Type of Vehicle", value: "name", sortable: false },
+        { text: "Brand", value: "brand", sortable: false },
+        { text: "Sitting Capacity", value: "sit", sortable: false },
+        { text: "Location", value: "loc", sortable: false },
+        { text: "Rate", value: "rate", sortable: false },
+        { text: "Actions", value: "action", sortable: false }
+      ],
+      vehicle: [],
+      editedIndex: -1,
+      editedItem: {
+        imageSRC: "",
+        name: "",
+        brand: "",
+        sitingcapacity: null,
+        location: "",
+        rate: ""
       },
-      { text: "Type of Vehicle", value: "name", sortable: false },
-      { text: "Brand", value: "brand", sortable: false },
-      { text: "Sitting Capacity", value: "sit", sortable: false },
-      { text: "Location", value: "loc", sortable: false },
-      { text: "Rate", value: "rate", sortable: false },
-      { text: "Actions", value: "action", sortable: false }
-    ],
-    vehicle: [],
-    editedIndex: -1,
-    editedItem: {
-      img: "",
-      name: "",
-      brand: "",
-      sit: 0,
-      loc: "",
-      rate: ""
-    },
-    defaultItem: {
-      img: "",
-      name: "",
-      brand: "",
-      sit: 0,
-      loc: "",
-      rate: ""
-    }
-  }),
+      defaultItem: {
+        imageSRC: "",
+        name: "",
+        brand: "",
+        sitingcapacity: null,
+        location: "",
+        rate: ""
+      }
+    };
+  },
 
   computed: {
     formTitle() {
@@ -128,29 +130,6 @@ export default {
   },
 
   methods: {
-    onSelect() {
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-      const file = this.$refs.file.files[0];
-      this.file = file;
-      if (!allowedTypes.includes(file.type)) {
-        this.message = "Filetype is wrong!!";
-      }
-      if (file.size > 500000) {
-        this.message = "Too large, max size allowed is 500kb";
-      }
-    },
-    async onSubmit() {
-      const formData = new FormData();
-      formData.append("file", this.file);
-      try {
-        await axios.post("http://localhost:5000/upload", formData);
-        this.message = "Uploaded!!";
-      } catch (err) {
-        console.log(err);
-        this.message = err.response.data.error;
-      }
-    },
-
     dashboard() {
       this.$router.push("/");
     },
@@ -197,35 +176,48 @@ export default {
     },
 
     save() {
-      if (this.editedIndex > -1) {
-        Object.assign(this.vehicle[this.editedIndex], this.editedItem);
-      } else {
-        this.vehicle.push(this.editedItem);
+       axios.post("http://localhost:5000/addItem",this.defaultItem).then(response => {
+        alert(response);
+        this.defaultItem ="";
+        console.log(defaultItem);
+      });
+      // if (this.editedIndex > -1) {
+      //   Object.assign(this.vehicle[this.editedIndex], this.editedItem);
+      // } else {
+      //   this.vehicle.push(this.editedItem);
+      // }
+      // this.close();
+    },
+    onSelect() {
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      const file = this.$refs.file.files[0];
+      this.file = file;
+      if (!allowedTypes.includes(file.type)) {
+        this.message = "Filetype is wrong!!";
       }
-      this.close();
+      if (file.size > 500000) {
+        this.message = "Too large, max size allowed is 500kb";
+      }
+      console.log(file);
+    },
+    async onSubmit() {
+      const formData = new FormData();
+      formData.append("file", this.file);
+      console.log(this.file);
+      try {
+        await axios.post("http://localhost:5000/upload", formData,{
+          headers:{
+            'Content-Type':'multipart/form-data'
+          }
+        })
+        console.log("Uploaded!!");
+      } catch (err) {
+        console.log(err);
+        //this.message = err.response.file.error;
+      }
     }
   }
 };
-
-//   beforeUpload() {
-//     this.file = this.$refs.myFileRef.files;
-//   },
-//   uploadFile: function() {
-//     let formData = new FormData();
-//     formData.append("file", this.file);
-//      for (let i = 0; i < this.file.length; i++) {
-//     formData.append("file", this.file[i]);
-//     this.$axios
-//       .post(`http://localhost:5000/upload`, formData)
-//       .then(res => {
-//         console.log(res);
-//         alert(res);
-//       })
-//       .catch(error => {
-//         console.error("file upload failed", error);
-//       });
-//      }
-//  },
 </script>
 
 
